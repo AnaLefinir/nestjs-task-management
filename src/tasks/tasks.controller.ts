@@ -1,37 +1,39 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UnsupportedMediaTypeException, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UnsupportedMediaTypeException, UsePipes, ValidationPipe } from '@nestjs/common';
 import { TasksService } from './tasks.service';
-import { Task } from './task.model';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto } from './dto/update-task.dto';
 import { TaskStatusValidationPipe } from './pipes/task-status-validation.pipe';
+import { Task } from './task.entity';
+import { DeleteResult } from 'typeorm';
+import { GetTasksFilterDto } from './dto/get-tasks-filter.dto';
 
 @Controller('tasks')
 export class TasksController {
     constructor(private tasksService: TasksService) {}
 
     @Get()
-    getAllTasks(): Task[] {
-        return this.tasksService.getAllTasks();
+    getTasks(@Query(ValidationPipe) filterDto: GetTasksFilterDto): Promise<Task[]> {
+        return this.tasksService.getTasks(filterDto);
     }
 
     @Get('/:id')
-    getTaskById(@Param('id') id: string): Task {
+    getTaskById(@Param('id', ParseIntPipe) id: number): Promise<Task> {
         return this.tasksService.getTaskById(id);
     }
 
     @Post()
     @UsePipes(ValidationPipe)
-    createTask(@Body() createTaskDto : CreateTaskDto): Task{
+    createTask(@Body() createTaskDto : CreateTaskDto): Promise<Task> {
         return this.tasksService.createTask(createTaskDto);
     }
 
     @Delete('/:id')
-    deleteTask(@Param('id') id: string): Task {
-        return this.tasksService.deleteTask(id);
+    deleteTask(@Param('id', ParseIntPipe) id: number): void {
+        this.tasksService.deleteTask(id);
     }
 
     @Patch('/:id/status')
-    updateTask(@Param('id') id: string, @Body(TaskStatusValidationPipe) updateTaskDto : UpdateTaskDto): Task {
+    updateTask(@Param('id', ParseIntPipe) id: number, @Body(TaskStatusValidationPipe) updateTaskDto : UpdateTaskDto): Promise<Task> {
         updateTaskDto.id = id;
 
         return this.tasksService.updateTaskStatus(updateTaskDto);
